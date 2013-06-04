@@ -3,7 +3,7 @@
 This is a Clojure data validation library. There are many like it, but
 this one is mine.
 
-**ALPHA code:** All names and return values are all subject to change
+**ALPHA code:** All names and return values are subject to change
 without warning in subsequent 0.x releases.
 
 
