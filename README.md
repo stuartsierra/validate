@@ -181,10 +181,10 @@ additional validation on the return value of that function with the
 ### Looking Inside Maps
 
 When you know that certain keys should be present in a map, you can
-check that their values pass additional validation checks. The =in=
+check that their values pass additional validation checks. The `in`
 function takes a vector of keys and one or more validation functions.
 It returns a validation function that navigates into the map as with
-Clojure's =get-in= function and runs the validation functions on the
+Clojure's `get-in` function and runs the validation functions on the
 value. 
 
     (def john {:name "John Doe", :address {:city "Baltimore"}})
@@ -197,8 +197,8 @@ value.
     ;;     :error :not-found,
     ;;     :value {:name "John Doe", :address {:city "Baltimore"}}})
 
-With =in=, the map must contain the given keys or it fails the
-validation. An alternate form, =if-in=, allows the validation to pass
+With `in`, the map must contain the given keys or it fails the
+validation. An alternate form, `if-in`, allows the validation to pass
 if any keys are missing.
 
     ((v/if-in [:address :zip] (v/is integer?)) john)
