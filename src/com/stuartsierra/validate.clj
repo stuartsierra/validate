@@ -3,7 +3,7 @@
 
 ;;; General-purpose predicates
 
-(defn callable?
+(defn supports?
   "Returns true if it is possible to call f on x without throwing an
   exception."
   [f x]
@@ -14,7 +14,7 @@
 (defn seqable?
   "Returns true if it is possible to call clojure.core/seq on x."
   [x]
-  (callable? seq x))
+  (supports? seq x))
 
 ;;; Core validation
 
