@@ -1,21 +1,6 @@
 (ns com.stuartsierra.validate
   (:refer-clojure :exclude (and cond count keys or range vals when)))
 
-;;; General-purpose predicates
-
-(defn supports?
-  "Returns true if it is possible to call f on x without throwing an
-  exception."
-  [f x]
-  (try (f x)
-       true
-       (catch Exception _ false)))
-
-(defn seqable?
-  "Returns true if it is possible to call clojure.core/seq on x."
-  [x]
-  (supports? seq x))
-
 ;;; Core validation
 
 (defn validator
@@ -68,7 +53,7 @@
      `(every (validator (partial ~pred ~@args)
                         {:expected '~&form}))))
 
-;;; Validator Combinators
+;;; Validator combinators
 
 (defn and-all
   "Returns a single validator function which takes a single argument
@@ -95,9 +80,9 @@
 (defn or
   "Returns the disjunction of validator functions. The returned
   function takes a single argument and calls all the validator
-  functions on it. If all the validations pass, it returns nil. If any
-  validation fails, short-circuits and returns a sequence of errors,
-  does not run the remaining validations."
+  functions on it. If at least one of the validations pass, it
+  short-circuits and returns nil. If all validations fail, returns a
+  sequence of errors."
   [& validators]
   (fn [input]
     (loop [validators validators
@@ -109,74 +94,7 @@
                :errors errors
                :input input})))))
 
-(defn if-in
-  "Like 'in' but does not return an error if the structure does not
-  contain the given keys."
-  [ks & validators]
-  (let [vfn (apply and validators)]
-    (fn [input]
-      (let [value (get-in input ks ::not-found)]
-        (if (= value ::not-found)
-          nil
-          (when-let [errs (vfn value)]
-            (list {:in ks :errors errs :value input})))))))
-
-(defn has
-  "Returns a validation function that checks for the presence of keys
-  in a nested associative structure. ks is a sequence of keys."
-  [ks]
-  (fn [input]
-    (clojure.core/when (= ::not-found (get-in input ks ::not-found))
-      (list {:in ks :error :not-found :value input}))))
-
-(defn in
-  "Returns a composition of validator functions that operate on a value
-  in nested associative structures. Reaches into the structure as with
-  'get-in' where ks is a sequential collection of keys. Calls the
-  'and'd validators on the value. If any validations fail, returns
-  a map with errors and the keys.
-
-  If the structure does not contain ks, returns an error. See also
-  if-in."
-  [ks & validators]
-  (and (has ks)
-       (apply if-in ks validators)))
-
-(defn every
-  "Returns a validator function that applies the validators to each
-  element of the input collection."
-  [& validators]
-  (let [vfn (apply and validators)]
-    (and (is seqable?)
-         (fn [input]
-           (let [s (seq input)]
-             (clojure.core/when s
-               (seq (mapcat #(vfn %) s))))))))
-
-(defn when
-  "Returns a validator function that only checks the validators
-  when (pred input) is true."
-  [pred & validators]
-  (let [vfn (apply and validators)]
-    (fn [input]
-      (clojure.core/when (pred input)
-        (vfn input)))))
-
-(defn cond
-  "Returns a validator function that checks multiple conditions. Each
-  clause is a pair of a predicate and a validator. Optional last
-  argument is a validator to run if none of the predicates returns
-  true; otherwise the validation fails."
-  [& clauses]
-  (fn [input]
-    (loop [[pred vfn] clauses]
-      (if vfn
-        (if (pred input)
-          (vfn input)
-          (recur (nthnext clauses 2)))
-        (if pred
-          (pred input)
-          (list {:error :no-matching-clause :value input}))))))
+;;; Embedding normal functions in validators
 
 (defn call-fn
   "Returns a validator function that calls f on the input value and
@@ -217,6 +135,73 @@
   of calling count on its input."
   [& validators]
   `(call clojure.core/count ~@validators))
+
+;;; Reaching into associative structures
+
+(defn if-in
+  "Like 'in' but does not return an error if the structure does not
+  contain the given keys."
+  [ks & validators]
+  (let [vfn (apply and validators)]
+    (fn [input]
+      (let [value (get-in input ks ::not-found)]
+        (if (= value ::not-found)
+          nil
+          (when-let [errs (vfn value)]
+            (list {:in ks :errors errs :value input})))))))
+
+(defn has
+  "Returns a validation function that checks for the presence of keys
+  in a nested associative structure. ks is a sequence of keys."
+  [ks]
+  (fn [input]
+    (clojure.core/when (= ::not-found (get-in input ks ::not-found))
+      (list {:in ks :error :not-found :value input}))))
+
+(defn in
+  "Returns a composition of validator functions that operate on a value
+  in nested associative structures. Reaches into the structure as with
+  'get-in' where ks is a sequential collection of keys. Calls the
+  'and'd validators on the value. If any validations fail, returns
+  a map with errors and the keys.
+
+  If the structure does not contain ks, returns an error. See also
+  if-in."
+  [ks & validators]
+  (and (has ks)
+       (apply if-in ks validators)))
+
+(defn every
+  "Returns a validator function that applies the validators to each
+  element of the input collection."
+  [& validators]
+  (let [vfn (apply and validators)]
+    (call seq (fn [input] (seq (mapcat vfn input))))))
+
+(defn when
+  "Returns a validator function that only checks the validators
+  when (pred input) is true."
+  [pred & validators]
+  (let [vfn (apply and validators)]
+    (fn [input]
+      (clojure.core/when (pred input)
+        (vfn input)))))
+
+(defn cond
+  "Returns a validator function that checks multiple conditions. Each
+  clause is a pair of a predicate and a validator. Optional last
+  argument is a validator to run if none of the predicates returns
+  true; otherwise the validation fails."
+  [& clauses]
+  (fn [input]
+    (loop [[pred vfn] clauses]
+      (if vfn
+        (if (pred input)
+          (vfn input)
+          (recur (nthnext clauses 2)))
+        (if pred
+          (pred input)
+          (list {:error :no-matching-clause :value input}))))))
 
 ;;; Validator-creation functions
 
