@@ -134,7 +134,7 @@
   in nested associative structures. Reaches into the structure as with
   'get-in' where ks is a sequential collection of keys. Calls the
   'and'd validators on the value. If any validations fail, returns
-  a map with :ks and :errors.
+  a map with errors and the keys.
 
   If the structure does not contain ks, returns an error. See also
   if-in."
@@ -193,9 +193,9 @@
              (merge msg {:value input :errors (list e)}))))))
 
 (defmacro call
-  "Returns a validation function that calls f on the input value and
-  then performs validation on the return value of f. validators are
-  combined as with 'and'."
+  "Returns a validation function that calls the function named by
+  symbol on the input value and then performs validation on the return
+  value of the function. validators are combined as with 'and'."
   [sym & validators]
   {:pre [(symbol? sym)]}
   `(call-fn ~sym {:expr '~&form} ~@validators))
@@ -206,10 +206,16 @@
   [& validators]
   `(call clojure.core/keys ~@validators))
 
-(defmacro vals [& validators]
+(defmacro vals
+  "Returns a validation function that performs validation on the values
+  of its input, which must be a map."
+  [& validators]
   `(call clojure.core/vals ~@validators))
 
-(defmacro count [& validators]
+(defmacro count
+  "Returns a validation function that performs validation on the result
+  of calling count on its input."
+  [& validators]
   `(call clojure.core/count ~@validators))
 
 ;;; Validator-creation functions
