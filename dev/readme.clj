@@ -1,10 +1,10 @@
-;; Executing forms in temp namespace:  G__1810
+;; Executing forms in temp namespace:  G__2070
 (require '[com.stuartsierra.validate :as v])
 ;;=> nil
 
 (def number-validator (v/is number?))
-;;=> #<Var@6c618821: 
-;;     #<validate$validator$fn__1673 com.stuartsierra.validate$validator$fn__1673@6162c87a>>
+;;=> #<Var@b97cf78: 
+;;     #<validate$validator$fn__1876 com.stuartsierra.validate$validator$fn__1876@48b49e4>>
 
 (number-validator 42)
 ;;=> nil
@@ -13,8 +13,8 @@
 ;;=> ({:expected (v/is number?), :value "hi"})
 
 (def under-10 (v/validator #(< % 10) {:error "must be less than 10"}))
-;;=> #<Var@24060e78: 
-;;     #<validate$validator$fn__1673 com.stuartsierra.validate$validator$fn__1673@57945696>>
+;;=> #<Var@214b9e0c: 
+;;     #<validate$validator$fn__1876 com.stuartsierra.validate$validator$fn__1876@7869f0bc>>
 
 (under-10 42)
 ;;=> ({:error "must be less than 10", :value 42})
@@ -34,14 +34,14 @@
 ;;    :file "NO_SOURCE_PATH"}
 
 (-> (rand-int 100) (* 2) inc (v/assert-valid (v/is odd?)))
-;;=> 73
+;;=> 91
 
 (v/valid? "hello" (v/is string?))
 ;;=> true
 
 (def odd-integer (v/and (v/is integer?) (v/is odd?)))
-;;=> #<Var@1eb458fd: 
-;;     #<validate$and$fn__1697 com.stuartsierra.validate$and$fn__1697@5954100e>>
+;;=> #<Var@7ea4b9da: 
+;;     #<validate$and$fn__1900 com.stuartsierra.validate$and$fn__1900@4eb3ea0f>>
 
 (odd-integer 10)
 ;;=> ({:expected (v/is odd?), :value 10})
@@ -50,11 +50,18 @@
 ;;=> ({:expected (v/is integer?), :value 5.0})
 
 ((v/every (v/is even?)) [4 3 8 15])
-;;=> ({:value 3, :expected (v/is even?)} {:value 15, :expected (v/is even?)})
+;;=> ({:errors
+;;     ({:value 3, :expected (v/is even?)}
+;;      {:value 15, :expected (v/is even?)}),
+;;     :value (4 3 8 15),
+;;     :expr (call seq (fn [input] (seq (mapcat vfn input))))})
 
 ((v/are even?) [4 3 8 15])
-;;=> ({:value 3, :expected (v/are even?)}
-;;    {:value 15, :expected (v/are even?)})
+;;=> ({:errors
+;;     ({:value 3, :expected (v/are even?)}
+;;      {:value 15, :expected (v/are even?)}),
+;;     :value (4 3 8 15),
+;;     :expr (call seq (fn [input] (seq (mapcat vfn input))))})
 
 ((v/or (v/is integer?) (v/is float?)) 3)
 ;;=> nil
@@ -71,11 +78,14 @@
 
 (def simple-map
  (v/and (v/keys (v/are keyword?)) (v/vals (v/are string?))))
-;;=> #<Var@46244bb9: 
-;;     #<validate$and$fn__1697 com.stuartsierra.validate$and$fn__1697@585739a0>>
+;;=> #<Var@16394576: 
+;;     #<validate$and$fn__1900 com.stuartsierra.validate$and$fn__1900@6929ae9b>>
 
 (simple-map {:a "one", :b 2})
-;;=> ({:errors ({:expected (v/are string?), :value 2}),
+;;=> ({:errors
+;;     ({:errors ({:expected (v/are string?), :value 2}),
+;;       :value ("one" 2),
+;;       :expr (call seq (fn [input] (seq (mapcat vfn input))))}),
 ;;     :expr
 ;;     (com.stuartsierra.validate/call clojure.core/vals (v/are string?)),
 ;;     :value ("one" 2)})
@@ -84,18 +94,24 @@
 ;;=> ({:errors
 ;;     ({:value 5,
 ;;       :pred
-;;       #<G__1810$eval1856$fn__1857 G__1810$eval1856$fn__1857@7fcf16ac>}),
+;;       #<G__2070$eval2116$fn__2117 G__2070$eval2116$fn__2117@7657a1c7>}),
 ;;     :value 5,
 ;;     :expr
 ;;     (com.stuartsierra.validate/call
 ;;      clojure.core/count
-;;      (v/validator (fn* [p1__1855#] (< p1__1855# 4))))})
+;;      (v/validator (fn* [p1__2115#] (< p1__2115# 4))))})
 
-((v/call seq (v/are char?)) "hello")
+((v/are char?) "hello")
 ;;=> nil
 
+((v/are char?) 42)
+;;=> {:errors
+;;    (#<IllegalArgumentException java.lang.IllegalArgumentException: Don't know how to create ISeq from: java.lang.Long>),
+;;    :value 42,
+;;    :expr (call seq (fn [input] (seq (mapcat vfn input))))}
+
 (def john {:name "John Doe", :address {:city "Baltimore"}})
-;;=> #<Var@314f1b7f: {:name "John Doe", :address {:city "Baltimore"}}>
+;;=> #<Var@4935b92e: {:name "John Doe", :address {:city "Baltimore"}}>
 
 ((v/in [:address :city] (v/is string?)) john)
 ;;=> nil
