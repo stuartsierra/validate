@@ -113,7 +113,6 @@ validation passes or false if it does not:
     ;;=> true
 
 
-
 ### Combining Validation Functions
 
 The `and` function combines multiple validation functions into one.
@@ -127,8 +126,8 @@ the same way:
     (odd-integer 4)
     ;;=> ({:expected (v/is odd?), :value 4})
 
-    (odd-integer 5.0)
-    ;;=> ({:expected (v/is integer?), :value 5.0})
+    (odd-integer 4.0)
+    ;;=> ({:expected (v/is integer?), :value 4.0})
 
 
 ### Looking Inside Collections
@@ -161,12 +160,18 @@ validations to the keys and values of the map, respectively:
 You can also use `count` to validate facts about the number of
 elements in a collection:
 
-    ((v/count (v/validator #(< % 4))) [1 2 3 4 5])
+    ((v/count (v/validator #(< % 4))) [:a :b :c :d :e])
     ;;=> ({:errors
     ;;     ({:value 5,
-    ;;       :pred #<G__4047$eval4093$fn__4094>}),
+    ;;       :pred
+    ;;       #<G__2198$eval2244$fn__2245 G__2198$eval2244$fn__2245@20986975>}),
     ;;     :value 5,
-    ;;     :expr (v/count (v/validator (fn* [p1__4092#] (< p1__4092# 4))))})
+    ;;     :expr
+    ;;     (com.stuartsierra.validate/call
+    ;;      clojure.core/count
+    ;;      (v/validator (fn* [p1__2243#] (< p1__2243# 4))))})
+
+(This error message needs work.)
 
 More generally, you can call any function on the input and perform
 additional validation on the return value of that function with the
