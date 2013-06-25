@@ -17,11 +17,11 @@ The goal of this library is to construct validation functions which:
    (e.g. that it is a map)
 3. Return data structures (for internationalization or further
    processing) instead of strings
-4. Return a complete description of what failed and why
+4. Are fast and non-allocating in the "passing" branch
+5. Return a description of what failed and why
 
-The last point is the hardest to get right. The layout and naming in
-the "failure" messages returned by this library are the part most
-likely to change.
+The layout and naming in the "failure" messages returned by this
+library are the part most likely to change.
 
 A *validation function* takes a single argument, the value you want to
 validate. It returns either:
